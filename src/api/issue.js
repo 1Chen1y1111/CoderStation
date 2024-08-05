@@ -20,3 +20,13 @@ export function addIssueApi(data) {
     data: data,
   });
 }
+
+/**
+ * 根据 id 获取面试题的详情
+ */
+export function getIssueByIdApi(id) {
+  return request({
+    url: `/api/issue/${id}`,
+    method: "GET",
+  });
+}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { formatDate } from "../utils/tools.js";
 
+import { useNavigate } from "react-router-dom";
+
 import styles from "../css/IssueItem.module.css";
 
 import { Tag } from "antd";
@@ -11,6 +13,7 @@ import { getUserByIdApi } from "../api/user.js";
 
 function IssueItem(props) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { typeList } = useSelector((state) => state.type);
 
@@ -56,7 +59,12 @@ function IssueItem(props) {
       </div>
       {/* 问题内容 */}
       <div className={styles.issueContainer}>
-        <div className={styles.top}>{props.issueInfo.issueTitle}</div>
+        <div
+          className={styles.top}
+          onClick={() => navigate(`/issueDetail/${props.issueInfo._id}`)}
+        >
+          {props.issueInfo.issueTitle}
+        </div>
         <div className={styles.bottom}>
           <div className={styles.left}>
             <Tag color={colorArr[typeList.indexOf(type) % colorArr.length]}>
