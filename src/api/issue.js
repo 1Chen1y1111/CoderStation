@@ -9,3 +9,14 @@ export function getIssueByPageApi(params) {
     },
   });
 }
+
+/**
+ * 新增问答
+ */
+export function addIssueApi(data) {
+  return request({
+    url: "/api/issue/",
+    method: "POST",
+    data: data,
+  });
+}

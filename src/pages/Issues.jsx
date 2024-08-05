@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
 import { getIssueByPageApi } from "../api/issue";
-import IssueItem from "../components/IssueItem";
 
+import { Pagination } from "antd";
+import IssueItem from "../components/IssueItem";
 import PageHeader from "../components/PageHeader";
+import AddIssueBtn from "../components/AddIssueBtn";
+import Recommend from "../components/Recommend";
+import ScrollRank from "../components/ScrollRank";
 
 import styles from "../css/Issue.module.css";
 
@@ -14,6 +18,13 @@ function Issues(props) {
     pageSize: 10,
     total: 10,
   });
+
+  function handlePageChange(current, pageSize) {
+    setPageInfo({
+      current,
+      pageSize,
+    });
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -42,9 +53,28 @@ function Issues(props) {
       <PageHeader title="问答列表" />
       <div className={styles.issueContainer}>
         {/* 左边区域 */}
-        <div className={styles.leftSide}>{issueList}</div>
+        <div className={styles.leftSide}>
+          {issueList}
+          <div className="paginationContainer">
+            <Pagination
+              defaultCurrent={1}
+              {...pageInfo}
+              onChange={handlePageChange}
+            />
+          </div>
+        </div>
         {/* 右边区域 */}
-        <div className={styles.rightSide}></div>
+        <div className={styles.rightSide}>
+          <AddIssueBtn />
+          <div
+            style={{
+              marginBottom: "30px",
+            }}
+          >
+            <Recommend />
+          </div>
+          <ScrollRank />
+        </div>
       </div>
     </div>
   );

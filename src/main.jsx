@@ -7,6 +7,7 @@ import { BrowserRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN.js";
 import "antd/dist/reset.css";
+import "./css/index.css";
 
 import { Provider } from "react-redux";
 import store from "./redux/store.js";
