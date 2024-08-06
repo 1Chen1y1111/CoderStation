@@ -30,3 +30,14 @@ export function getIssueByIdApi(id) {
     method: "GET",
   });
 }
+
+/**
+ * 更新问答
+ */
+export function updateIssueApi(issueId, data) {
+  return request({
+    url: `/api/issue/${issueId}`,
+    method: "PATCH",
+    data: data,
+  });
+}

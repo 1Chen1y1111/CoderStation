@@ -1,18 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { Comment } from "@ant-design/compatible";
-import { Avatar, Form, Button, List, Tooltip } from "antd";
+import { Avatar, Form, Button, List, Tooltip, message, Pagination } from "antd";
 import { useSelector } from "react-redux";
 import { UserOutlined } from "@ant-design/icons";
 import { Editor } from "@toast-ui/react-editor";
 import "@toast-ui/editor/dist/toastui-editor.css";
 
-import { getIssueCommentByIdApi } from "../api/comment";
+import { getIssueCommentByIdApi, addCommentApi } from "../api/comment";
 import { getUserByIdApi } from "../api/user";
+import { updateIssueApi } from "../api/issue";
 import { formatDate } from "../utils/tools";
 
+import { updateUserInfoAsync } from "../redux/userSlice";
+import { useDispatch } from "react-redux";
+
+import styles from "../css/Discuss.module.css";
+
 function Discuss(props) {
+  const dispatch = useDispatch();
+
   const { userInfo, isLogin } = useSelector((state) => state.user);
   const [commentList, setCommentList] = useState([]);
+  const [refresh, setRefresh] = useState(false);
   const [pageInfo, setPageInfo] = useState({
     current: 1, // 当前是第一页
     pageSize: 10, // 每一页显示 10 条数据
@@ -34,26 +43,25 @@ function Discuss(props) {
       } else if (props.commentType === 2) {
         // 传递过来的是书籍的 id，所以需要获取该书籍 id 所对应的评论
       }
-      data.data.forEach(async (item, i) => {
+      for (let i = 0; i < data.data.length; i++) {
         const result = await getUserByIdApi(data.data[i].userId);
         // 将用户的信息添加到评论对象上面
         data.data[i].userInfo = result.data;
-      });
+      }
       // 更新评论数据
       setCommentList(data.data);
       // 更新分页数据
       setPageInfo({
-        currentPage: data.currentPage,
-        eachPage: data.eachPage,
-        count: data.count,
-        totalPage: data.totalPage,
+        current: data.currentPage,
+        pageSize: data.eachPage,
+        total: data.count,
       });
     }
 
     if (props.targetId) {
       fetchData();
     }
-  }, [props.targetId]);
+  }, [props.targetId, refresh, pageInfo.current, pageInfo.pageSize]);
 
   // 根据登录状态进行头像处理
   let avatar = null;
@@ -61,6 +69,62 @@ function Discuss(props) {
     avatar = <Avatar src={userInfo.avatar} />;
   } else {
     avatar = <Avatar icon={<UserOutlined />} />;
+  }
+
+  /**
+   * 添加评论
+   */
+  async function onAddDiscussHandle() {
+    let _comment = null;
+    if (props.commentType === 1) {
+      _comment = editorRef.current.getInstance().getHTML();
+      if (_comment === "<p><br></p>") {
+        _comment = "";
+      }
+    } else if (props.commentType === 2) {
+      // 新增书籍
+    }
+    if (!_comment) {
+      message.warning("请输入评论内容");
+      return;
+    }
+    await addCommentApi({
+      userId: userInfo._id,
+      typeId: props.issueInfo ? props.issueInfo.typeId : props.bookInfo.typeId,
+      commentContent: _comment,
+      commentType: props.commentType,
+      bookId: null,
+      issueId: props.targetId,
+    });
+    message.success("评论成功");
+    setRefresh(!refresh);
+    editorRef.current.getInstance().reset();
+
+    // 更新评论问答次数
+
+    updateIssueApi(props.targetId, {
+      commentNumber: props.issueInfo
+        ? ++props.issueInfo.commentNumber
+        : ++props.bookInfo.commentNumber,
+    });
+
+    dispatch(
+      updateUserInfoAsync({
+        userId: userInfo._id,
+        newInfo: {
+          points: userInfo.points + 4,
+        },
+      })
+    );
+  }
+
+  // 评论分页
+  function handlePageChange(current, pageSize) {
+    setPageInfo({
+      current,
+      pageSize,
+      total: pageInfo.total,
+    });
   }
 
   return (
@@ -83,7 +147,11 @@ function Discuss(props) {
               />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" disabled={isLogin ? false : true}>
+              <Button
+                type="primary"
+                disabled={isLogin ? false : true}
+                onClick={onAddDiscussHandle}
+              >
                 添加评论
               </Button>
             </Form.Item>
@@ -98,7 +166,7 @@ function Discuss(props) {
           dataSource={commentList}
           renderItem={(item) => (
             <Comment
-              avatar={<Avatar src={item.avatar} />}
+              avatar={<Avatar src={item.userInfo.avatar} />}
               content={
                 <div
                   dangerouslySetInnerHTML={{ __html: item.commentContent }}
@@ -112,6 +180,28 @@ function Discuss(props) {
             />
           )}
         />
+      )}
+
+      {/* 分页 */}
+      {commentList.length > 0 ? (
+        <div className={styles.paginationContainer}>
+          <Pagination
+            showQuickJumper
+            defaultCurrent={1}
+            onChange={handlePageChange}
+            total={pageInfo.total}
+          />
+        </div>
+      ) : (
+        <div
+          style={{
+            fontWeight: "200",
+            textAlign: "center",
+            margin: "50px",
+          }}
+        >
+          暂无评论
+        </div>
       )}
     </div>
   );
