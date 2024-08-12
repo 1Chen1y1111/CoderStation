@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getTypeList, updateIssueTypeId } from "../redux/typeSlice";
+import {
+  getTypeList,
+  updateBookTypeId,
+  updateIssueTypeId,
+} from "../redux/typeSlice";
 import { Tag } from "antd";
 
 function TypeSelect(props) {
@@ -57,7 +61,7 @@ function TypeSelect(props) {
     if (location.pathname === "/issues") {
       dispatch(updateIssueTypeId(typeId));
     } else if (location.pathname === "/books") {
-      // 书籍
+      dispatch(updateBookTypeId(typeId));
     }
   }
 

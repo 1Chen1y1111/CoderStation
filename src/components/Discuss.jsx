@@ -6,8 +6,12 @@ import { UserOutlined } from "@ant-design/icons";
 import { Editor } from "@toast-ui/react-editor";
 import "@toast-ui/editor/dist/toastui-editor.css";
 
-import { getIssueCommentByIdApi, addCommentApi } from "../api/comment";
-import { getUserByIdApi } from "../api/user";
+import {
+  getIssueCommentByIdApi,
+  addCommentApi,
+  getBookCommentByIdApi,
+} from "../api/comment";
+import { editUserApi, getUserByIdApi } from "../api/user";
 import { updateIssueApi } from "../api/issue";
 import { formatDate } from "../utils/tools";
 
@@ -42,6 +46,11 @@ function Discuss(props) {
         data = result.data;
       } else if (props.commentType === 2) {
         // 传递过来的是书籍的 id，所以需要获取该书籍 id 所对应的评论
+        const result = await getBookCommentByIdApi(props.targetId, {
+          current: pageInfo.current,
+          pageSize: pageInfo.pageSize,
+        });
+        data = result.data;
       }
       for (let i = 0; i < data.data.length; i++) {
         const result = await getUserByIdApi(data.data[i].userId);
@@ -76,13 +85,9 @@ function Discuss(props) {
    */
   async function onAddDiscussHandle() {
     let _comment = null;
-    if (props.commentType === 1) {
-      _comment = editorRef.current.getInstance().getHTML();
-      if (_comment === "<p><br></p>") {
-        _comment = "";
-      }
-    } else if (props.commentType === 2) {
-      // 新增书籍
+    _comment = editorRef.current.getInstance().getHTML();
+    if (_comment === "<p><br></p>") {
+      _comment = "";
     }
     if (!_comment) {
       message.warning("请输入评论内容");
@@ -93,10 +98,10 @@ function Discuss(props) {
       typeId: props.issueInfo ? props.issueInfo.typeId : props.bookInfo.typeId,
       commentContent: _comment,
       commentType: props.commentType,
-      bookId: null,
-      issueId: props.targetId,
+      bookId: props.bookInfo?._id,
+      issueId: props.issueInfo?._id,
     });
-    message.success("评论成功");
+
     setRefresh(!refresh);
     editorRef.current.getInstance().reset();
 
@@ -107,6 +112,10 @@ function Discuss(props) {
         ? ++props.issueInfo.commentNumber
         : ++props.bookInfo.commentNumber,
     });
+    // 增加对应用户的积分
+    editUserApi(userInfo._id, {
+      points: userInfo.points + 4,
+    });
 
     dispatch(
       updateUserInfoAsync({
@@ -116,6 +125,8 @@ function Discuss(props) {
         },
       })
     );
+
+    message.success("评论添加成功，积分+4");
   }
 
   // 评论分页
